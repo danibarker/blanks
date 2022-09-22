@@ -1,4 +1,4 @@
-const getFeed = require("./getPodcasts");
+const getPublishedDate = require("./getPodcasts");
 const getSpreadsheetData = require("./readCSV");
 
 const sqlite3 = require("sqlite3").verbose();
@@ -8,7 +8,6 @@ const getDb = () => {
     if (err) {
       console.error(err.message);
     }
-    console.log("Connected to the database.");
   });
 };
 
@@ -17,7 +16,6 @@ const closeDb = (db) => {
     if (err) {
       console.error(err.message);
     }
-    console.log("Close the database connection.");
   });
 };
 
@@ -66,24 +64,39 @@ const getHostIdByName = async (hostName) => {
   }
 };
 let locationid = 1;
-getSpreadsheetData().then((data) => {
-  console.log("data", data);
+getSpreadsheetData().then((data) => {  
+  let podcasts=data.map((podcast)=>{
+    return [
+      getPublishedDate(podcast['Episode Number']),
+      podcast['Date of Recording'],
+      podcast['Episode Number'],
+      getHostIdByName(podcast['Host']),
+      getGuestIdByName(podcast['Guest1']),
+      getGuestIdByName(podcast['Guest2']),
+      podcast['Show Summary'],
+      podcast['Memorable Quotes (please include at least one)'],
+      locationid,
+    ]
+  })
+  podcasts.forEach(element => {
+    addPodcast(element);
+  });
 });
 function addPodcast(podcast) {
+  let db = getDb();
   db.run(
     `INSERT INTO podcasts(
       episodedate,
       dateadded,
       episodenumber,
-      hostid
+      hostid,
       guest1id, 
       guest2id, 
-      guest3id,
       episodesummary,
       memorablequotes,
-      locationid,
+      locationid
       ) 
-      VALUES(?,?,?,?)`,
+      VALUES(?,?,?,?,?,?,?,?,?)`,
     podcast,
     function (err) {
       if (err) {

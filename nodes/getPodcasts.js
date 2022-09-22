@@ -1,4 +1,5 @@
 const axios = require("axios");
+const { createDiffieHellmanGroup } = require("crypto");
 // xml parser
 const DOMParser = require("xmldom").DOMParser;
 const getFeed = async () => {
@@ -22,9 +23,6 @@ const getFeed = async () => {
       let episode =
         items[keys[i]].getElementsByTagName("itunes:episode")[0].childNodes[0]
           .nodeValue;
-
-      console.log("pubDate", pubDate);
-      console.log("episode", episode);
       podcastItems.push({
         pubDate,
         episode,
@@ -33,5 +31,18 @@ const getFeed = async () => {
   }
   return podcastItems;
 };
-
-module.exports = getFeed;
+const getPublishedDate = async (episodenumber) => {
+  let feed = await getFeed();
+  try {
+    let date = feed.find(podcast => podcast.episode == episodenumber).pubDate
+    let dateString = new Date(date)
+      .toLocaleString("en-US", {
+        timeZone: "America/Edmonton",
+      })
+      .replace(",", "");
+    return dateString
+  } catch (error) {
+    console.log(error, episodenumber)
+  }
+}
+module.exports = getPublishedDate;
